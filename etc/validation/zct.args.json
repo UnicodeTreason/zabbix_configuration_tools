@@ -1,0 +1,24 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "zct.args.json",
+    "type": "object",
+    "title": "App args schema",
+    "examples": [
+        {
+            "arg1": "aaa"
+        }
+    ],
+    "required": [
+        "arg1"
+    ],
+    "properties": {
+        "arg1": {
+            "type": "string",
+            "default": "aaa",
+            "examples": [
+                "aaa"
+            ]
+        }
+    },
+    "additionalProperties": true
+}

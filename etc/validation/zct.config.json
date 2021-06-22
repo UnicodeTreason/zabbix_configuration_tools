@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "The root schema",
+    "description": "The root schema comprises the entire JSON document.",
+    "default": {},
+    "examples": [
+        {
+            "zabbix": {
+                "url": "https://zabbix.domain.com/",
+                "root_group": "Zabbix/Template"
+            }
+        }
+    ],
+    "required": [
+        "zabbix"
+    ],
+    "additionalProperties": true,
+    "properties": {
+        "zabbix": {
+            "type": "object",
+            "required": [
+                "url",
+                "root_group"
+            ],
+            "additionalProperties": true,
+            "properties": {
+                "url": {
+                    "type": "string"
+                },
+                "root_group": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

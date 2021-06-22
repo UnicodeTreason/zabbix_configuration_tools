@@ -1,0 +1,9 @@
+[style]
+# Use predefined style as base
+BASED_ON_STYLE=pep8
+
+# Increase column limit.
+COLUMN_LIMIT=180
+
+# The number of columns to use for indentation.
+INDENT_WIDTH=4
