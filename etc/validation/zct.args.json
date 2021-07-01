@@ -5,19 +5,15 @@
     "title": "App args schema",
     "examples": [
         {
-            "arg1": "aaa"
+            "desired_state_dir": "/tmp/zabbix_templates"
         }
     ],
     "required": [
-        "arg1"
+        "desired_state_dir"
     ],
     "properties": {
-        "arg1": {
-            "type": "string",
-            "default": "aaa",
-            "examples": [
-                "aaa"
-            ]
+        "desired_state_dir": {
+            "type": "string"
         }
     },
     "additionalProperties": true

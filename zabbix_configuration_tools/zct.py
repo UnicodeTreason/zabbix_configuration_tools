@@ -39,7 +39,7 @@ def parse_args():
 
     try:
         parser = argparse.ArgumentParser(description='Zabbix Configuration Management')
-        parser.add_argument('arg1', type=str, help='First Argument')
+        parser.add_argument('desired_state_dir', type=str, help='The dir in which the desired state of Zabbix is stored.')
         # Convert argparse Namespace into dict for easy use and JSON validation later
         return vars(parser.parse_args())
     except SystemExit as error:
@@ -50,6 +50,16 @@ def parse_args():
     finally:
         # Put stderr back to original config
         sys.stderr = sys.__stderr__
+
+
+def find_json_files(base_dir):
+    for entry in os.scandir(base_dir):
+        if entry.is_file() and entry.name.endswith('.json'):
+            yield f'{base_dir}/{entry.name}'
+        elif entry.is_dir():
+            yield from find_json_files(entry.path)
+        else:
+            print(f'Neither a file, nor a dir: {entry.path}')
 
 
 def main(args: dict):
@@ -69,36 +79,59 @@ def main(args: dict):
 
     zapi = ZabbixAPI(app_config['zabbix']['url'])
     zapi.login(app_config['zabbix']['username'], app_config['zabbix']['password'])
-    print('Connected to Zabbix API Version %s' % zapi.api_version())
+    logger.info(f'Connected to Zabbix API Version {zapi.api_version()}')
 
-    # Get all host groups
-    for hostgroup in zapi.hostgroup.get():
-        # Skip groups not defined as root group or a child of the root group
-        if app_config['zabbix']['root_group'] not in hostgroup["name"]:
-            continue
+    # Get all root hostgroup and all nested host groups
+    hostgroups = {}
+    hostgroups_raw = zapi.hostgroup.get(search={'name': [app_config['zabbix']['root_group']]})
+    # Reorganise into sortable dict
+    for hostgroup in hostgroups_raw:
+        hostgroups[hostgroup['name']] = hostgroup['groupid']
 
+    # Process hostgroups in "alphabetical" order
+    current_state = {}
+    logger.info('Caching current state for comparison')
+    for hostgroup in sorted(hostgroups.keys()):
         # Get templates in desired groups
-        for template in zapi.template.get(groupids=hostgroup["groupid"]):
-            print(f'{template["name"]} ({template["templateid"]})')
-
+        for template in zapi.template.get(groupids=hostgroups[hostgroup]):
             # Get template configuration
-            api_params = {'templates': [template["templateid"]]}
+            api_params = {'templates': [template['templateid']]}
             result = zapi.configuration.export(format='json', options=api_params)
-            template_current = json.loads(result)
+            json_data = json.loads(result)
+            current_state[template['name']] = json_data
 
-            print(f'Caching {template["name"]} to disk')
-            with open(f'{DIR_VAR}/cache/{template["name"]}.json', 'w', encoding='utf-8') as f:
-                json.dump(template_current, f, ensure_ascii=False, indent=4)
+            # Determine cache location and prepare it
+            template_filename = f'{DIR_VAR}/cache/{hostgroup.replace(app_config["zabbix"]["root_group"], "")}/{template["name"]}.json'
+            os.makedirs(os.path.dirname(template_filename), exist_ok=True)
+            with open(template_filename, 'w', encoding='utf-8') as f:
+                json.dump(current_state[template['name']], f, ensure_ascii=False, indent=4)
 
-    # # Get git copy
-    # with open('tem.json') as json_file:
-    #     template_truth = json.load(json_file)
+    # Read desired state files
+    if args['desired_state_dir'] == '':
+        print('No desired_state_dir defined. Just caching current state to disk.')
+        sys.exit(0)
 
-    # print(f'NameCurr: {template_current["zabbix_export"]["date"]}')
-    # print(f'NameTruth: {template_truth["zabbix_export"]["date"]}')
+    desired_state = {}
+    logger.info('Reading desired state for comparison')
+    for path in find_json_files(args['desired_state_dir']):
+        # Generate required variables
+        path_temp = path.replace(args['desired_state_dir'], '').strip('/')
+        exploded_path = path_temp.split('/')
+        template_name = exploded_path[-1].strip('.json')
 
-    # diff = DeepDiff(template_current, template_truth)
-    # print(diff)
+        # Read files in
+        with open(path) as f:
+            json_data = json.load(f)
+            desired_state[template_name] = json_data
+
+    # Compare states
+    logger.info('Comparing states')
+    for template in current_state:
+        print(f'Template: {template}')
+        if template in desired_state:
+            print(DeepDiff(current_state[template], desired_state[template]))
+        else:
+            print(f'{template} not found in desired state.')
 
 
 if __name__ == '__main__':
