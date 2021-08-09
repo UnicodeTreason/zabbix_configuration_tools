@@ -1,5 +1,6 @@
 # Custom Ignores
 /etc/config/*
+!/etc/config/.gitkeep
 /var/cache/*
 /var/log/*
 
