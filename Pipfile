@@ -1,4 +1,5 @@
 deepdiff==5.5.0
 flake8==6.0.0
+jsonschema==4.17.3
 pyzabbix==0.8.2
 yapf==0.32.0
