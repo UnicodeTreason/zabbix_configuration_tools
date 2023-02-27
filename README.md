@@ -1,5 +1,27 @@
 # zabbix_configuration_tools
 
+## Installation
+
+- Clone repo to a Linux distro of choice
+
+```shell
+git clone https://github.com/UnicodeTreason/zabbix_configuration_tools.git
+cd alert-flows
+```
+
+- Create and activate venv
+
+```shell
+python3 -m venv ./venv
+source ./venv/bin/activate
+```
+
+- Install pips into venv
+
+```shell
+pip install -r Pipfile
+```
+
 ## Usage
 
 Point to a dir containing the desired state template files, most likely this is a cloned git repo.
