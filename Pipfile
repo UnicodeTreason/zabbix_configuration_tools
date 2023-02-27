@@ -1,2 +1,4 @@
 deepdiff==5.5.0
+flake8==6.0.0
 pyzabbix==0.8.2
+yapf==0.32.0
